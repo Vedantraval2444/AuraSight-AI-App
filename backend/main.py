@@ -19,7 +19,7 @@ app = FastAPI(title="AuraSight AI Diagnostics")
 
 origins = [
     "http://localhost:3000",
-    "https://aura-sight-ai-app.vercel.app", # Your live Vercel frontend URL
+    "https://aura-sight24.vercel.app/", # Your live Vercel frontend URL
 ]
 
 app.add_middleware(
@@ -141,3 +141,4 @@ async def export_pdf(data: dict = Body(...)):
 # --- FIX: Added server runner for Render ---
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=10000)
+
