@@ -15,11 +15,11 @@ from tf_keras_vis.gradcam import Gradcam
 from tf_keras_vis.utils.model_modifiers import ReplaceToLinear
 from tf_keras_vis.utils.scores import CategoricalScore
 
-# --- 1. INITIALIZE THE APP ---
 app = FastAPI(title="AuraSight AI Diagnostics")
+
 origins = [
-    "http://localhost:3000",  # For local development
-    "https://aura-sight-ai-app.vercel.app",  # Your live frontend URL
+    "http://localhost:3000",
+    "https://aura-sight-ai-app.vercel.app", # Your live Vercel frontend URL
 ]
 
 app.add_middleware(
@@ -30,14 +30,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- 2. REBUILD MODEL STRUCTURE AND LOAD WEIGHTS ---
 IMG_SIZE = 224
 NUM_CLASSES = 5
 
 def build_model():
-    base_model = tf.keras.applications.EfficientNetB0(
-        weights=None, include_top=False, input_shape=(IMG_SIZE, IMG_SIZE, 3)
-    )
+    base_model = tf.keras.applications.EfficientNetB0(weights=None, include_top=False, input_shape=(IMG_SIZE, IMG_SIZE, 3))
     base_model.trainable = False
     x = base_model.output
     x = tf.keras.layers.GlobalAveragePooling2D()(x)
@@ -47,7 +44,7 @@ def build_model():
 
 try:
     model = build_model()
-    model.load_weights('aurasight_model.weights.h5')
+    model.load_weights('backend/aurasight_model.weights.h5')
     print("Model structure built and weights loaded successfully.")
 except Exception as e:
     print(f"Error loading model: {e}")
@@ -55,7 +52,8 @@ except Exception as e:
 
 CLASS_NAMES = ["No DR", "Mild", "Moderate", "Severe", "Proliferative DR"]
 
-# --- 3. XAI: GENERATE GRAD-CAM HEATMAP ---
+# --- ALL OTHER FUNCTIONS (XAI, PREDICTION, PDF) ---
+# ... (Your existing functions for generate_gradcam, preprocess_and_predict, create_pdf_report)
 def generate_gradcam(image_batch, prediction_index):
     score = CategoricalScore([prediction_index])
     gradcam = Gradcam(model, model_modifier=ReplaceToLinear(), clone=True)
@@ -67,7 +65,6 @@ def generate_gradcam(image_batch, prediction_index):
     is_success, buffer = cv2.imencode(".jpg", superimposed_img)
     return base64.b64encode(buffer).decode("utf-8")
 
-# --- 4. PREDICTION FUNCTION ---
 def preprocess_and_predict(image_bytes: bytes):
     if model is None: return None
     nparr = np.frombuffer(image_bytes, np.uint8)
@@ -81,7 +78,6 @@ def preprocess_and_predict(image_bytes: bytes):
     heatmap_base64 = generate_gradcam(img_batch, predicted_index)
     return prediction_array, heatmap_base64
 
-# --- 5. PDF GENERATION ---
 class PDF(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 15)
@@ -93,35 +89,15 @@ class PDF(FPDF):
         self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
 def create_pdf_report(data: dict):
-    pdf = PDF()
-    pdf.add_page()
-    pdf.set_font('Arial', 'B', 12)
-    pdf.cell(0, 10, f"Report Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", 0, 1)
-    pdf.cell(0, 10, f"Patient File: {data['filename']}", 0, 1)
-    pdf.ln(5)
-    pdf.set_font('Arial', 'B', 14)
-    pdf.cell(0, 10, 'Diagnosis Result', 0, 1)
-    pdf.set_font('Arial', '', 12)
-    pdf.cell(0, 10, f"Condition: {data['diagnosis']}", 0, 1)
-    pdf.cell(0, 10, f"Confidence: {data['confidence']}", 0, 1)
-    pdf.ln(10)
-    for title, b64_string in [("Original Scan", data['original_image']), ("Model Focus Heatmap", data['heatmap_image'])]:
-        try:
-            image_bytes = base64.b64decode(b64_string)
-            pdf.set_font('Arial', 'B', 14)
-            pdf.cell(0, 10, title, 0, 1)
-            pdf.image(io.BytesIO(image_bytes), w=150)
-            pdf.ln(10)
-        except Exception as e:
-            print(f"Could not process image for PDF: {e}")
-    
-    # --- THIS IS THE FIX ---
-    # The .output() method directly returns bytes, so no .encode() is needed
-    return pdf.output()
+    # ... your existing PDF generation code
+    pass
 
-# --- 6. API ENDPOINTS ---
+# --- API ENDPOINTS ---
+
+# --- NEW: HEALTH CHECK ENDPOINT ---
 @app.get("/")
-def read_root(): return {"message": "Welcome to the AuraSight AI API"}
+def health_check():
+    return {"status": "ok", "message": "Welcome to the AuraSight AI API"}
 
 @app.post("/predict")
 async def predict_image(file: UploadFile = File(...)):
@@ -143,5 +119,4 @@ async def predict_image(file: UploadFile = File(...)):
 @app.post("/export_pdf")
 async def export_pdf(data: dict = Body(...)):
     pdf_bytes = create_pdf_report(data)
-
     return StreamingResponse(io.BytesIO(pdf_bytes), media_type="application/pdf", headers={"Content-Disposition": "attachment;filename=AuraSight_Report.pdf"})
