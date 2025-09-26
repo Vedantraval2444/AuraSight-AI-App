@@ -45,7 +45,7 @@ def build_model():
 try:
     model = build_model()
     # Correct path for Render, which runs from the repo root
-    model.load_weights('backend/aurasight_model.weights.h5')
+    model.load_weights('aurasight_model.weights.h5')
     print("Model structure built and weights loaded successfully.")
 except Exception as e:
     print(f"Error loading model: {e}")
@@ -141,4 +141,5 @@ async def export_pdf(data: dict = Body(...)):
 # --- FIX: Added server runner for Render ---
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=10000)
+
 
