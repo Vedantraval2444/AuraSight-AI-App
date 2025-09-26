@@ -44,6 +44,7 @@ def build_model():
 
 try:
     model = build_model()
+    # Correct path for Render, which runs from the repo root
     model.load_weights('backend/aurasight_model.weights.h5')
     print("Model structure built and weights loaded successfully.")
 except Exception as e:
@@ -52,8 +53,6 @@ except Exception as e:
 
 CLASS_NAMES = ["No DR", "Mild", "Moderate", "Severe", "Proliferative DR"]
 
-# --- ALL OTHER FUNCTIONS (XAI, PREDICTION, PDF) ---
-# ... (Your existing functions for generate_gradcam, preprocess_and_predict, create_pdf_report)
 def generate_gradcam(image_batch, prediction_index):
     score = CategoricalScore([prediction_index])
     gradcam = Gradcam(model, model_modifier=ReplaceToLinear(), clone=True)
@@ -89,12 +88,30 @@ class PDF(FPDF):
         self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
 def create_pdf_report(data: dict):
-    # ... your existing PDF generation code
-    pass
+    # --- FIX: Restored PDF generation logic ---
+    pdf = PDF()
+    pdf.add_page()
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(0, 10, f"Report Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", 0, 1)
+    pdf.cell(0, 10, f"Patient File: {data['filename']}", 0, 1)
+    pdf.ln(5)
+    pdf.set_font('Arial', 'B', 14)
+    pdf.cell(0, 10, 'Diagnosis Result', 0, 1)
+    pdf.set_font('Arial', '', 12)
+    pdf.cell(0, 10, f"Condition: {data['diagnosis']}", 0, 1)
+    pdf.cell(0, 10, f"Confidence: {data['confidence']}", 0, 1)
+    pdf.ln(10)
+    for title, b64_string in [("Original Scan", data['original_image']), ("Model Focus Heatmap", data['heatmap_image'])]:
+        try:
+            image_bytes = base64.b64decode(b64_string)
+            pdf.set_font('Arial', 'B', 14)
+            pdf.cell(0, 10, title, 0, 1)
+            pdf.image(io.BytesIO(image_bytes), w=150)
+            pdf.ln(10)
+        except Exception as e:
+            print(f"Could not process image for PDF: {e}")
+    return pdf.output()
 
-# --- API ENDPOINTS ---
-
-# --- NEW: HEALTH CHECK ENDPOINT ---
 @app.get("/")
 def health_check():
     return {"status": "ok", "message": "Welcome to the AuraSight AI API"}
@@ -120,3 +137,7 @@ async def predict_image(file: UploadFile = File(...)):
 async def export_pdf(data: dict = Body(...)):
     pdf_bytes = create_pdf_report(data)
     return StreamingResponse(io.BytesIO(pdf_bytes), media_type="application/pdf", headers={"Content-Disposition": "attachment;filename=AuraSight_Report.pdf"})
+
+# --- FIX: Added server runner for Render ---
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=10000)
