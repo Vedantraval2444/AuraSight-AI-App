@@ -4,7 +4,7 @@ import { useDropzone } from 'react-dropzone';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import './App.css';
-import logo from './logo.png'; // Make sure logo.png is in your src folder
+import logo from './logo.png';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
 
@@ -28,15 +28,19 @@ function App() {
     setChartData(null);
   }
 
-  const processFile = (file) => {
+  const processFile = useCallback((file) => {
     if (file) {
       setSelectedFile(file);
       setOriginalImage(URL.createObjectURL(file));
       resetState();
     }
-  };
+  }, []); // Use empty dependency array if resetState is stable
 
-  const onDrop = useCallback(acceptedFiles => { processFile(acceptedFiles[0]); }, []);
+  // --- FIX: Added processFile to useCallback dependency array ---
+  const onDrop = useCallback(acceptedFiles => {
+    processFile(acceptedFiles[0]);
+  }, [processFile]);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: 'image/*' });
 
   const handleFileChange = (event) => { processFile(event.target.files[0]); };
@@ -65,7 +69,6 @@ function App() {
     formData.append('file', selectedFile);
 
     try {
-      // VERCEL DEPLOYMENT: Use relative path for the API call
       const response = await axios.post(`${API_URL}/predict`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -96,8 +99,8 @@ function App() {
         const originalImageBase64 = reader.result.split(',')[1];
         const payload = { ...prediction, original_image: originalImageBase64, heatmap_image: heatmap };
         try {
-            // VERCEL DEPLOYMENT: Use relative path for the API call
-            const response = await axios.post(`/api/export_pdf`, payload, { responseType: 'blob' });
+            // --- FIX: Corrected API call to use the API_URL variable ---
+            const response = await axios.post(`${API_URL}/export_pdf`, payload, { responseType: 'blob' });
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
@@ -113,6 +116,8 @@ function App() {
   };
 
   return (
+    // ... your existing JSX for the UI ...
+    // No changes needed in the return statement
     <div className="App">
       <nav className="navbar">
         <div className="navbar-brand">
