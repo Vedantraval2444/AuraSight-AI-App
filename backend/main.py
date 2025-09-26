@@ -19,7 +19,7 @@ from tf_keras_vis.utils.scores import CategoricalScore
 app = FastAPI(title="AuraSight AI Diagnostics")
 origins = [
     "http://localhost:3000",  # For local development
-    "https://aurasight24.onrender.com",  # Your live frontend URL
+    "https://aura-sight-ai-app.vercel.app",  # Your live frontend URL
 ]
 
 app.add_middleware(
@@ -143,4 +143,5 @@ async def predict_image(file: UploadFile = File(...)):
 @app.post("/export_pdf")
 async def export_pdf(data: dict = Body(...)):
     pdf_bytes = create_pdf_report(data)
+
     return StreamingResponse(io.BytesIO(pdf_bytes), media_type="application/pdf", headers={"Content-Disposition": "attachment;filename=AuraSight_Report.pdf"})
