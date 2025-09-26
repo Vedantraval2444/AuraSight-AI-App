@@ -1,0 +1,18 @@
+# Python / Backend
+env/
+__pycache__/
+*.pyc
+backend/train_images/
+backend/train_images.zip
+backend/*.h5
+backend/*.keras
+backend/aurasight_model_final_savedmodel/
+
+# React / Frontend
+frontend/node_modules/
+frontend/build/
+.env
+npm-debug.log
+
+# IDE files
+.vscode/
