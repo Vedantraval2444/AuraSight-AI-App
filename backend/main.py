@@ -19,7 +19,7 @@ app = FastAPI(title="AuraSight AI Diagnostics")
 
 origins = [
     "http://localhost:3000",
-    "https://aura-sight24.vercel.app/", # Your live Vercel frontend URL
+    "https://aura-sight-ai-app.vercel.app", # Your live Vercel frontend URL
 ]
 
 app.add_middleware(
@@ -45,7 +45,7 @@ def build_model():
 try:
     model = build_model()
     # Correct path for Render, which runs from the repo root
-    model.load_weights('aurasight_model.weights.h5')
+    model.load_weights('backend/aurasight_model.weights.h5')
     print("Model structure built and weights loaded successfully.")
 except Exception as e:
     print(f"Error loading model: {e}")
@@ -88,7 +88,6 @@ class PDF(FPDF):
         self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
 def create_pdf_report(data: dict):
-    # --- FIX: Restored PDF generation logic ---
     pdf = PDF()
     pdf.add_page()
     pdf.set_font('Arial', 'B', 12)
@@ -141,5 +140,3 @@ async def export_pdf(data: dict = Body(...)):
 # --- FIX: Added server runner for Render ---
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=10000)
-
-
