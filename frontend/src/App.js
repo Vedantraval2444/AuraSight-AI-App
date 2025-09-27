@@ -34,9 +34,8 @@ function App() {
       setOriginalImage(URL.createObjectURL(file));
       resetState();
     }
-  }, []); // Use empty dependency array if resetState is stable
+  }, []);
 
-  // --- FIX: Added processFile to useCallback dependency array ---
   const onDrop = useCallback(acceptedFiles => {
     processFile(acceptedFiles[0]);
   }, [processFile]);
@@ -116,8 +115,6 @@ function App() {
   };
 
   return (
-    // ... your existing JSX for the UI ...
-    // No changes needed in the return statement
     <div className="App">
       <nav className="navbar">
         <div className="navbar-brand">
