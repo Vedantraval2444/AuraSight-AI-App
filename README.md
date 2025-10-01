@@ -52,7 +52,6 @@ Crucially, we tackle the "black box" problem of AI in medicine. By integrating *
 | **Frontend** | React.js, Axios, Chart.js, React-Dropzone            |
 | **Backend** | Python, FastAPI, Uvicorn                             |
 | **AI / ML** | TensorFlow, Keras, OpenCV, `tf-keras-vis` (for XAI) |
-| **Deployment**| Vercel (Frontend), Render (Backend)                  |
 
 ---
 
